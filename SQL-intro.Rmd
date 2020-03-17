@@ -1,0 +1,279 @@
+---
+title: "SQL Introduction"
+output: 
+  learnr::tutorial:
+    progressive: true
+    allow_skip: true
+    fig.show : 'asis'
+runtime: shiny_prerendered
+---
+
+```{r setup, include=FALSE}
+library(learnr)
+knitr::opts_chunk$set(echo = TRUE,
+                      warning = FALSE,
+                      message = FALSE)
+library(RSQLite)
+library(DBI)
+```
+## Ekstrak Database Menggunakan R dan SQL
+
+Berbicara mengenai SQL atau Structure Query Language, dalam melakukan query pada suatu database kita juga bisa menggunakan R untuk mendapakan insight dan mendapatkan tabel dari database yang kita miliki. Untuk dapat melakukan query pada R, ada beberapa package yang dapat digunakan, diantaranya yaitu `RSQLite` dan `DBI`. 
+
+Untuk bisa melakukan koneksi dengan database yang kita miliki, kita dapat membuat koneksi terlebih dahulu terhadap database. Untuk melakukan koneksi dengan database, kita bisa menggunakan cara sebagai berikut.
+
+```{r connectdb, eval=FALSE}
+library(RSQLite)
+library(DBI)
+conn <- dbConnect(SQLite(), host = 'host', 
+                  port = 'port',
+                  user = 'user',
+                  password = 'password',
+                  db = 'database')
+```
+
+Pada tutorial kali ini kita akan coba gunakan database dari SQLite yaitu `chinook.db` yang sudah tersimpan pada folder `data_input`. `chinook.db` merupakan database yang terdiri dari 11 tabel mengenai playlist lagu dan penjualan. Berikut merupakan skema relational database pada chinook.
+
+![](https://cdn.sqlitetutorial.net/wp-content/uploads/2015/11/sqlite-sample-database-color.jpg){width=50%}
+
+Penjelasan lebih lanjut mengenai tabel pada chinook database dapat dilihat pada [link](https://www.sqlitetutorial.net/sqlite-sample-database/) berikut.
+
+Hal pertama yang harus kita lakukan dalam bekerja dengan suatu database menggunakan tools lain adalah membuat koneksi terhadap database tersebut. Kita bisa menggunakan cara untuk melakukan koneksi seperti pada code `connection` diatas jika database kita berada disuatu server database, atau jika memiliki local database kita bisa membuat koneksi dengan mencari path penyimpanan local database yang kita miliki seperti code dibawah ini.
+
+```{r connection}
+connection <- dbConnect(SQLite(), "data_input/chinook.db")
+```
+
+Pada code diatas, path penyimpanan local database kita terdapat pada folder `data_input` dengan nama database kita adalah `chinook.db`. Untuk dapat melihat list tabel yang terdapat pada chinook database, kita bisa menggunakan function `dbListTables()`.
+
+```{r list_table}
+dbListTables(connection)
+```
+
+## Fungsi Perhitungan dalam SQL
+
+Setelah kita sukses dalam melakukan koneksi terhadap database yang kita miliki, kita bisa melakukan querying untuk mendapatkan tabel yang kita perlukan untuk analisis. Pada pembahasan ini, kita akan melakukan summary dari beberapa tabel yang terdapat pada database yang kita miliki. Tujuannya yaitu membantu kita untuk menemukan insight dari suatu data(tabel) dengan lebih mudah tanpa melihat keseluruhan data yang ada. Sebagai sebuah pemrograman yang bekerja pada suatu database, SQL juga memiliki kemampuan untuk melakukan summary data secara langsung tanpa harus menggunakan tools lain. SQL memiliki beberapa fungsi perhitungan yang dapat digunakan untuk membuat suatu summary, yaitu:
+
+* `MIN()` : untuk menampilkan nilai terendah dari suatu record pada data tabel
+* `MAX()` : untuk menampilkan nilai tertinggi dari suatu record pada data tabel
+* `COUNT()` : untuk menghitung banyak records yang sesuai dengan kondisi yang tersedia
+* `AVG()` : untuk menghitung rata-rata
+* `SUM()` : untuk menjumlahkan record
+
+Query yang bisa digunakan yaitu sebagai berikut.
+
+```
+SELECT MIN(column_name)|MAX(column_name)|COUNT(column_name)|AVG(column_name)|SUM(column_name) AS condition_name
+FROM table_name
+WHERE condition;
+```
+
+### `MIN()` dan `MAX()`
+
+`MIN()` digunakan untuk menampilkan nilai terendah dari suatu record pada data tabel sedangkan `MAX()` digunakan untuk menampilkan nilai tertinggi dari suatu record pada query atau data yang ada. Penggunaan `MIN()` dan `MAX()` ini biasa digunakan ketika langsung ingin mencari nilai terendah atau tertinggi pada record tertentu dalam data tabel. 
+
+Misalnya disini kita ingin melakukan analisis pada salah satu table yang ada pada chinook database yaitu `invoice_items`. Kita ingin mencari tahu harga terendah dari track yang dijual. 
+
+```{r}
+query <- "SELECT MIN(UnitPrice) AS LowestPrice FROM tracks"
+min_price <- dbSendQuery(conn = connection, statement = query)
+dbFetch(min_price)
+```
+
+Jika dilihat dari table yang dihasilkan ternyata harga terendah dari sebuah track yang dijual yaitu seharga 0.99 
+
+### `COUNT()`
+
+`COUNT()` merupakan fungsi dalam SQL yang digunakan untuk menghitung banyaknya nilai dengan kondisi tertentu. `COUNT()` biasanya digunakan untuk menghitung banyaknya suatu nilai kategorik dalam suatu kolom yang ada pada tabel tertentu dalam database. `COUNT()` akan mengembalikan satu nilai hasil dari perhitungan suatu kolom tertentu yang kita tuju. 
+
+Misalnya kita ingin mengetahui berapa banyak track yang sudah di compose oleh "Alanis Morissette & Glenn Ballard"?
+
+```{r}
+query <- "SELECT Composer, COUNT(composer) AS Value FROM tracks 
+          WHERE Composer = 'Alanis Morissette & Glenn Ballard'"
+alanis <- dbSendQuery(conn = connection, statement = query)
+dbFetch(alanis)
+```
+
+Berdasarkan nilai yang dihasilkan, ternyata banyaknya track yang sudah pernah dicompose oleh "Alanis Morissette & Glenn Ballard" sebanyak 13 track.
+
+### `SUM()`
+
+`SUM()` merupakan fungsi dalam SQL yang digunakan untuk menjumlahkan nilai numerik. `SUM()` akan mengembalikan satu nilai hasil dari penjumlahan nilai numerik dari kolom yang kita tuju. 
+
+Misalnya kita ingin mencari tahu total revenue yang diperoleh dari composer "Alanis Morissette & Glenn Ballard".
+
+```{r}
+query <- "SELECT t.Composer, SUM(i.UnitPrice * i.Quantity) AS Revenue FROM invoice_items AS i
+          LEFT JOIN tracks AS t ON t.TrackId = i.TrackId 
+          WHERE t.Composer = 'Alanis Morissette & Glenn Ballard'"
+sum_composer <- dbSendQuery(conn = connection, statement = query)
+dbFetch(sum_composer)
+```
+
+Berdasarkan data yang ada, ternyata total revenue yang dihasilkan oleh composer "Alanis Morissette & Glenn Ballard" sebesar 7.92.
+
+### `AVG()`
+
+Lain halnya dengan `SUM()` dan beberapa statement yang telah disebutkan diatas, `AVG()` merupakan fungsi dalam SQL yang digunakan untuk menghasilkan nilai rata-rata pada suatu data numerik. Pada beberapa jenis SQL, penggunaan fungsi `AVG()` ini memiliki flavornya sendiri-sendiri tergantung pada jenis SQL yang digunakan.
+
+Misalnya kita ingin mencari tahu rata-rata harga track yang dipasarkan dari composer "Alanis Morissette & Glenn Ballard".
+
+```{r}
+query <- "SELECT t.Composer, AVG(i.UnitPrice) AS MeanPrice FROM invoice_items AS i
+          LEFT JOIN tracks AS t ON t.TrackId = i.TrackId 
+          WHERE t.Composer = 'Alanis Morissette & Glenn Ballard'"
+mean_composer <- dbSendQuery(conn = connection, statement = query)
+dbFetch(mean_composer)
+```
+
+> Fungsi perhitungan yang terdapat pada SQL akan sangat berguna ketika kita gabungkan dengan fungsi `GROUP BY` untuk mendapatkan insight lebih banyak dalam data
+
+### Latihan
+
+1. Berapakah total genre yang ada pada database yang tersedia?
+
+```{r ex1, exercise = TRUE}
+dbFetch(dbSendQuery(connection, "select count(name) from tracks"))
+```
+
+2. Berapakah total keuntungan yang diperoleh oleh artis BackBeat?
+
+```{r ex2, exercise = TRUE}
+
+```
+
+```{r ex2-hint}
+# Untuk mengetahui informasi banyaknya pembelian track dapat menggunakan kolom `Quantity` pada table `invoice_items`.
+```
+
+3. Berapakah keuntungan terbesar yang diperoleh dari penjualan track?
+
+```{r ex3, exercise = TRUE}
+
+```
+
+```{r ex3-hint}
+# Total keuntungan dapat diperoleh pada tabel invoices
+```
+
+Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
+
+```{r quiz, echo = FALSE}
+quiz(
+  question("Berapakah total genre yang ada pada database yang tersedia?",
+    answer("14"),
+    answer("25", correct = TRUE),
+    answer("15"),
+    answer("3503"),
+    incorrect = "Cek ulang coba",
+    allow_retry = TRUE
+  ),
+  question("Berapakah total keuntungan yang diperoleh oleh artis BackBeat?",
+    answer("5.94", correct = TRUE),
+    answer("4.95"),
+    answer("15.84"),
+    answer("2328.6"),
+    incorrect = "Lebih teliti lagi yaa",
+    allow_retry = TRUE
+  ),
+  question("Berapakah keuntungan terbesar yang diperoleh dari penjualan track?",
+    answer("4.89"),
+    answer("0.99"),
+    answer("1.99"),
+    answer("25.86", correct = TRUE),
+    incorrect = "Sedikit lagi pasti bisa!",
+    allow_retry = TRUE
+  )
+)
+```
+
+
+## GROUP BY dan ORDER BY
+
+Salah satu fungsi yang sangat berguna dalam melakukan summary dari suatu tabel pada database yaitu `GROUP BY` dan `ORDER BY`. Kedua fungsi tersebut biasanya digunakan secara bersamaan untuk mendapatkan informasi dari suatu tabel yang sudah dikelompokkan dengan kondisi tertentu dan disajikan secara terurut. Seperti nama fungsinya yaitu `GROUP BY` digunakan untuk melakukan summary dengan melakukan pengelompokan berdasarkan kolom tertentu pada tabel yang dapat disajikan secara terurut menggunakan `ORDER BY`. 
+
+Misalnya, sebagai composer muda, seorang composer ingin membuat suatu lagu dengan genre tertentu yang dapat menggambarkan banyaknya track yang ada. Oleh karena itu, composer tersebut ingin mencoba mencari tahu genre apakah yang dapat mewakili dan menggambarkan total track yang ada.
+```{r}
+represent_genre <- dbSendQuery(conn = connection, statement = "SELECT g.Name, COUNT(t.TrackId) AS 
+                               Count 
+                               FROM tracks AS t
+                               LEFT JOIN genres AS g ON g.GenreId = t.GenreId
+                               GROUP BY g.Name ORDER BY Count DESC")
+dbFetch(represent_genre)
+```
+
+Ternyata 3 genre yang paling mewakili dari setiap track yang ada yaitu Rock, Latin, dan Metal. Oleh karena composer tersebut dapat membuat sutu lagu dengan genre seperti ketiga genre yang paling mewakili tersebut.
+
+Selanjutnya, berdasarkan genre yang paling mewakili tersebut, seorang composer tersebut berpikir apakah jika ia membuat lagu dari ketiga genre tersebut dapat menghasilkan keuntungan yang tinggi juga atau tidak. Oleh karena itu, composer tersebut ingin mencari tahu genre mana yang menghasilkan keuntungan paling tinggi.
+
+```{r}
+revenue_per_genre <- dbSendQuery(conn = connection, 
+                                 statement = "SELECT g.Name, SUM(i.UnitPrice*i.Quantity) AS 
+                                 TotalRevenue FROM tracks AS t 
+                                 LEFT JOIN genres AS g ON g.GenreId = t.GenreId 
+                                 LEFT JOIN invoice_items AS i ON i.TrackId = t.TrackId 
+                                 GROUP BY g.Name ORDER BY TotalRevenue DESC LIMIT 3")
+dbFetch(revenue_per_genre)
+```
+
+Genre yang paling menghasilkan keuntungan yang paling tinggi yaitu Rock, Latin, dan Metal. Hal ini ternyata selaras dengan 3 genre yang paling mewakili track yang ada. 
+
+### Latihan
+
+1. Playlist apa yang peling sering didengarkan dan merupakan genre apa berdasarkan track yang paling tinggi?
+
+```{r exa1, exercise = TRUE}
+
+```
+
+2. Media type apa yang digunakan paling banyak untuk genre Rock?
+
+```{r exa2, exercise = TRUE}
+
+```
+
+3. Siapakah nama pegawai yang memiliki produktifitas paling tinggi? Bisa dilihat dari `Total` invoice yang di tangani oleh pegawai tersebut.
+
+```{r exa3, exercise = TRUE}
+
+```
+
+```{r exa3-hint}
+# Coba lihat FirstName dan LastName bersamaan untuk menjawab persoalan ini
+```
+
+Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
+
+```{r quiz2, echo = FALSE}
+quiz(
+  question("Playlist apa yang peling sering didengarkan dan merupakan genre apa berdasarkan track yang paling tinggi?",
+    answer("GenreName Latin PlaylistName Music"),
+    answer("GenreName Rock PlaylistName Classical"),
+    answer("GenreName Rock PlaylistName Music", correct = TRUE),
+    answer("GenreName Metal PlaylistName 90's Music"),
+    incorrect = "Perhatikan nama genre dan playlistnya yaa",
+    allow_retry = TRUE
+  ),
+  question("Media type apa yang digunakan paling banyak untuk genre Rock?",
+    answer("MPEG audio file", correct = TRUE),
+    answer("AAC audio file"),
+    answer("Protected AAC audio file"),
+    answer("Purchased AAC audio file"),
+    incorrect = "Psss..Media typenya cuma ada 5 jenis kok, ayo temuin yang paling tepat",
+    allow_retry = TRUE
+  ),
+  question("Siapakah nama pegawai yang memiliki produktifitas paling tinggi?",
+    answer("Jane Johnson"),
+    answer("Margaret Park"),
+    answer("Jane Peacock", correct = TRUE),
+    answer("Steve Johnson"),
+    incorrect = "Coba cek lagi nama depan dan nama belakangnya",
+    allow_retry = TRUE
+  )
+)
+```
+
+
+
+
