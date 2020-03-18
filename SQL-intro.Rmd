@@ -193,6 +193,16 @@ quiz(
 
 Salah satu fungsi yang sangat berguna dalam melakukan summary dari suatu tabel pada database yaitu `GROUP BY` dan `ORDER BY`. Kedua fungsi tersebut biasanya digunakan secara bersamaan untuk mendapatkan informasi dari suatu tabel yang sudah dikelompokkan dengan kondisi tertentu dan disajikan secara terurut. Seperti nama fungsinya yaitu `GROUP BY` digunakan untuk melakukan summary dengan melakukan pengelompokan berdasarkan kolom tertentu pada tabel yang dapat disajikan secara terurut menggunakan `ORDER BY`. 
 
+`GROUP BY` dapat digunakan dengan syntax berikut ini:
+
+```
+SELECT column_name(s)
+FROM table_name
+WHERE condition
+GROUP BY column_name(s)
+ORDER BY column_name(s)
+```
+
 Misalnya, sebagai composer muda, seorang composer ingin membuat suatu lagu dengan genre tertentu yang dapat menggambarkan banyaknya track yang ada. Oleh karena itu, composer tersebut ingin mencoba mencari tahu genre apakah yang dapat mewakili dan menggambarkan total track yang ada.
 ```{r}
 represent_genre <- dbSendQuery(conn = connection, statement = "SELECT g.Name, COUNT(t.TrackId) AS 
@@ -274,6 +284,94 @@ quiz(
 )
 ```
 
+## UPDATE dan DELETE
+
+`UPDATE` digunakan untuk melakukan modifikasi nilai pada suatu record dalam tabel. Dalam melakukan modifikasi, `UPDATE` selalu dibarengi dengan perintah `SET.` Berikut ini adalah code perintah dalam menggunakan `UPDATE`:
+
+```
+UPDATE table_name
+SET column1 = value1, column2 = value2, ...
+WHERE condition
+```
+
+Misalnya kita ingin mengubah nama genre "Rock" menjadi "Rock Metal" dimana GenreId nya merupakan 1 pada tabel `genres`. Namun sebelumnya, agar kita memiliki 2 database yang berbeda dari satu sumber database dengan tujuan agar tetap memiliki yang asli, kita akan coba melakukan koneksi database ulang dengan nama object koneksinya berbeda. 
+```{r}
+conn_update <- dbConnect(SQLite(), "data_input/chinook-update.db")
+dbListTables(conn_update)
+```
 
 
+```{r}
+dbSendQuery(conn = conn_update, statement = "UPDATE genres SET Name = 'Rock Metal' WHERE GenreId = 1")
+```
 
+Ketika kita melakukan update informasi pada tabel dalam database, maka kita akan diberikan informasi berapa banyak perubahan yang terjadi. Untuk dapat melihat perubahan yang terjadi, kita harus menampilkan secara utuh kembali atau kolom yang ingin kita tampilkan saja.
+
+```{r}
+dbFetch(dbSendQuery(conn = conn_update, statement = "SELECT * FROM genres"))
+```
+
+Berbeda dengan `UPDATE`, `DELETE` statement digunakan untuk menghapus record atau baris yang sudah ada pada tabel. `DELETE` dapat kita gunakan dengan perintah berikut :
+
+```
+DELETE FROM table_name 
+WHERE condition
+```
+
+Misalnya, disini kita akan coba hapus row pertama pada tabel `genres` yaitu yang menyimpan informasi GenreId = 1 dan Name = 'Rock Metal'.
+```{r}
+dbSendQuery(conn = conn_update, statement = "DELETE FROM genres WHERE Name = 'Rock Metal'")
+```
+
+Setelah melakukan perubahan menggunakan `DELETE`, kita diberikan informasi banyaknya perubahan yang terjadi. Hasil dari perubahan tersebut dapat kita tampilkan lagi pada tabel `genres`.
+```{r}
+dbFetch(dbSendQuery(conn = conn_update, statement = "SELECT * FROM genres"))
+```
+
+Tabel `genres` yang tadinya memiliki 25 baris, karena dilakukan penghapusan 1 baris, maka tinggal tersisa 24 baris. 
+
+Kegunaan dari `UPDATE` dan `DELETE` ini akan sangat berguna apabila terdapat perubahan data dari customer (jika itu data customer) agar data yang kita miliki lebih aktual.
+
+### Latihan
+
+1. Lakukanlah perubahan data pada tabel `customers` dimana customer yang memiliki email dengan ekstensi "apple" maka ubah nama company-nya menjadi "Apple Inc.". Berapa banyak customer yang berasal dari "Apple Inc."?
+
+```{r exam1, exercise = TRUE}
+
+```
+```{r exam1-hint}
+# Anda dapat menggunakan bantuan fungsi `LIKE` dan beberapa wildcard untuk melakukan perubahan. Gunakan `conn_update` untuk mengerjakan
+```
+
+2. Setelah mendapatkan informasi banyaknya customer yang berasal dari company "Apple Inc.", coba lakukanlah pengapusan record customer yang berasal dari company "Apple Inc." tersebut. Berapa banyak data customer yang kita miliki? 
+
+```{r exam2, exercise = TRUE}
+
+```
+
+```{r exam2-hint}
+# Gunakan `conn_update` untuk mengerjakan
+```
+
+Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
+
+```{r quiz3, echo = FALSE}
+quiz(
+  question("Berapa banyak customer yang berasal dari Apple Inc.?",
+    answer("8"),
+    answer("49"),
+    answer("7", correct = TRUE),
+    answer("14"),
+    incorrect = "Kita hanya menggunakan informasi dari tabel `curtomers` aja",
+    allow_retry = TRUE
+  ),
+  question("Berapa banyak data customer yang kita miliki? ",
+    answer("52", correct = TRUE),
+    answer("7"),
+    answer("59"),
+    answer("48"),
+    incorrect = "Jangan lupa gunakan connection `conn_update` yaa",
+    allow_retry = TRUE
+  )
+)
+```
