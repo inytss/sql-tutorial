@@ -5,6 +5,7 @@ output:
     progressive: true
     allow_skip: true
     fig.show : 'asis'
+    theme: journal
 runtime: shiny_prerendered
 ---
 
@@ -137,6 +138,17 @@ dbFetch(mean_composer)
 dbFetch(dbSendQuery(connection, "select count(name) from tracks"))
 ```
 
+```{r quiz11, echo = FALSE}
+quiz(
+  question("Berapakah total genre yang ada pada database yang tersedia?",
+    answer("14"),
+    answer("25", correct = TRUE),
+    answer("15"),
+    answer("3503"),
+    incorrect = "Cek ulang coba",
+    allow_retry = TRUE)
+)
+```
 2. Berapakah total keuntungan yang diperoleh oleh artis BackBeat?
 
 ```{r ex2, exercise = TRUE}
@@ -144,9 +156,21 @@ dbFetch(dbSendQuery(connection, "select count(name) from tracks"))
 ```
 
 ```{r ex2-hint}
-# Untuk mengetahui informasi banyaknya pembelian track dapat menggunakan kolom `Quantity` pada table `invoice_items`.
+# Untuk dapat mengakses artis tertentu dapat menggunakan `WHERE` dan untuk mengetahui total keuntungan lakukan pengalian `QUantity` dan `UnitPrice` pada tabel invoice_items. Karena antara nama artist dengan tabel invoice_items tidak memiliki hubungan secara langsung, maka bisa lakukan `LEFT JOIN` pada table tracks dan albums untuk mendapatkan informasi yang ditanyakan
 ```
 
+```{r quiz12, echo = FALSE}
+quiz(
+  question("Berapakah total keuntungan yang diperoleh oleh artis BackBeat?",
+    answer("5.94", correct = TRUE),
+    answer("4.95"),
+    answer("15.84"),
+    answer("2328.6"),
+    incorrect = "Lebih teliti lagi yaa",
+    allow_retry = TRUE
+  )
+)
+```
 3. Berapakah keuntungan terbesar yang diperoleh dari penjualan track?
 
 ```{r ex3, exercise = TRUE}
@@ -157,9 +181,7 @@ dbFetch(dbSendQuery(connection, "select count(name) from tracks"))
 # Total keuntungan dapat diperoleh pada tabel invoices
 ```
 
-Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
-
-```{r quiz, echo = FALSE}
+```{r quiz13, echo = FALSE}
 quiz(
   question("Berapakah total genre yang ada pada database yang tersedia?",
     answer("14"),
@@ -237,12 +259,36 @@ Genre yang paling menghasilkan keuntungan yang paling tinggi yaitu Rock, Latin, 
 
 ```
 
+```{r quiz21, echo = FALSE}
+quiz(
+  question("Playlist apa yang peling sering didengarkan dan merupakan genre apa berdasarkan track yang paling tinggi?",
+    answer("GenreName Latin PlaylistName Music"),
+    answer("GenreName Rock PlaylistName Classical"),
+    answer("GenreName Rock PlaylistName Music", correct = TRUE),
+    answer("GenreName Metal PlaylistName 90's Music"),
+    incorrect = "Perhatikan nama genre dan playlistnya yaa",
+    allow_retry = TRUE
+  )
+)
+```
 2. Media type apa yang digunakan paling banyak untuk genre Rock?
 
 ```{r exa2, exercise = TRUE}
 
 ```
 
+```{r quiz22, echo = FALSE}
+quiz(
+question("Media type apa yang digunakan paling banyak untuk genre Rock?",
+    answer("MPEG audio file", correct = TRUE),
+    answer("AAC audio file"),
+    answer("Protected AAC audio file"),
+    answer("Purchased AAC audio file"),
+    incorrect = "Psss..Media typenya cuma ada 5 jenis kok, ayo temuin yang paling tepat",
+    allow_retry = TRUE
+  )
+)
+```
 3. Siapakah nama pegawai yang memiliki produktifitas paling tinggi? Bisa dilihat dari `Total` invoice yang di tangani oleh pegawai tersebut.
 
 ```{r exa3, exercise = TRUE}
@@ -253,26 +299,8 @@ Genre yang paling menghasilkan keuntungan yang paling tinggi yaitu Rock, Latin, 
 # Coba lihat FirstName dan LastName bersamaan untuk menjawab persoalan ini
 ```
 
-Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
-
-```{r quiz2, echo = FALSE}
+```{r quiz23, echo = FALSE}
 quiz(
-  question("Playlist apa yang peling sering didengarkan dan merupakan genre apa berdasarkan track yang paling tinggi?",
-    answer("GenreName Latin PlaylistName Music"),
-    answer("GenreName Rock PlaylistName Classical"),
-    answer("GenreName Rock PlaylistName Music", correct = TRUE),
-    answer("GenreName Metal PlaylistName 90's Music"),
-    incorrect = "Perhatikan nama genre dan playlistnya yaa",
-    allow_retry = TRUE
-  ),
-  question("Media type apa yang digunakan paling banyak untuk genre Rock?",
-    answer("MPEG audio file", correct = TRUE),
-    answer("AAC audio file"),
-    answer("Protected AAC audio file"),
-    answer("Purchased AAC audio file"),
-    incorrect = "Psss..Media typenya cuma ada 5 jenis kok, ayo temuin yang paling tepat",
-    allow_retry = TRUE
-  ),
   question("Siapakah nama pegawai yang memiliki produktifitas paling tinggi?",
     answer("Jane Johnson"),
     answer("Margaret Park"),
@@ -343,6 +371,18 @@ Kegunaan dari `UPDATE` dan `DELETE` ini akan sangat berguna apabila terdapat per
 # Anda dapat menggunakan bantuan fungsi `LIKE` dan beberapa wildcard untuk melakukan perubahan. Gunakan `conn_update` untuk mengerjakan
 ```
 
+```{r quiz31, echo = FALSE}
+quiz(
+  question("Berapa banyak customer yang berasal dari Apple Inc.?",
+    answer("8"),
+    answer("49"),
+    answer("7", correct = TRUE),
+    answer("14"),
+    incorrect = "Kita hanya menggunakan informasi dari tabel `curtomers` aja",
+    allow_retry = TRUE
+  )
+)
+```
 2. Setelah mendapatkan informasi banyaknya customer yang berasal dari company "Apple Inc.", coba lakukanlah pengapusan record customer yang berasal dari company "Apple Inc." tersebut. Berapa banyak data customer yang kita miliki? 
 
 ```{r exam2, exercise = TRUE}
@@ -353,18 +393,8 @@ Kegunaan dari `UPDATE` dan `DELETE` ini akan sangat berguna apabila terdapat per
 # Gunakan `conn_update` untuk mengerjakan
 ```
 
-Pilihlah jawaban dibawah ini yang paling tepat untuk menjawab beberapa pertanyaan diatas.
-
-```{r quiz3, echo = FALSE}
+```{r quiz32, echo = FALSE}
 quiz(
-  question("Berapa banyak customer yang berasal dari Apple Inc.?",
-    answer("8"),
-    answer("49"),
-    answer("7", correct = TRUE),
-    answer("14"),
-    incorrect = "Kita hanya menggunakan informasi dari tabel `curtomers` aja",
-    allow_retry = TRUE
-  ),
   question("Berapa banyak data customer yang kita miliki? ",
     answer("52", correct = TRUE),
     answer("7"),
